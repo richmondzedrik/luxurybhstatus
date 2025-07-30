@@ -32,7 +32,7 @@ dist-ssr
 # Hide shell scripts (contain sensitive operations)
 *.sh
 
-# Environment files (if any)
+# Environment files (CRITICAL - contains API keys)
 .env
 .env.local
 .env.production
@@ -40,6 +40,7 @@ dist-ssr
 
 # Keep only essential files visible
 !README.md
+
 
 
 
