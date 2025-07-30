@@ -29,4 +29,18 @@ dist-ssr
 *.sql
 *.md
 
+# Hide shell scripts (contain sensitive operations)
+*.sh
+
+# Environment files (if any)
+.env
+.env.local
+.env.production
+.env.development
+
+# Keep only essential files visible
+!README.md
+
+
+
 
