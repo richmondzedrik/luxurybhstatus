@@ -24,3 +24,9 @@ dist-ssr
 *.sw?
 
 .vercel
+
+# Hide SQL and Markdown files
+*.sql
+*.md
+
+
