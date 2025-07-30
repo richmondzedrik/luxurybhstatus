@@ -17,7 +17,8 @@ const UserList = () => {
       'Sword': '⚔️',
       'Assassin': '🗡️',
       'Mage': '🪄',
-      'Dual Blade': '🗡️⚔️'
+      'Dual Blade': '🗡️⚔️',
+      'Archer': '🏹'
     }
     return classEmojis[className] || '⚡'
   }

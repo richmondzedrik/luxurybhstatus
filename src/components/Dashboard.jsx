@@ -51,6 +51,7 @@ const Dashboard = () => {
                         {userProfile.class === 'Assassin' && '🗡️'}
                         {userProfile.class === 'Mage' && '🪄'}
                         {userProfile.class === 'Dual Blade' && '🗡️⚔️'}
+                        {userProfile.class === 'Archer' && '🏹'}
                       </span>
                     )}
                   </div>

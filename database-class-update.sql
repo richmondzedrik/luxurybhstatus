@@ -1,11 +1,15 @@
--- Add class and skills to the database
+-- Add Archer class to the database
 -- Run this in Supabase SQL Editor
 
--- Add class and skills columns to app_users table
-ALTER TABLE app_users 
-ADD COLUMN class TEXT CHECK (class IN ('Orb', 'Sword', 'Assassin', 'Mage', 'Dual Blade')),
-ADD COLUMN has_arcane_shield BOOLEAN DEFAULT false,
-ADD COLUMN has_group_heal BOOLEAN DEFAULT false;
+-- Drop existing class constraint and add new one with Archer
+ALTER TABLE app_users DROP CONSTRAINT IF EXISTS app_users_class_check;
+ALTER TABLE app_users ADD CONSTRAINT app_users_class_check
+CHECK (class IN ('Orb', 'Sword', 'Assassin', 'Mage', 'Dual Blade', 'Archer'));
+
+-- Add skills columns if they don't exist (will be ignored if they already exist)
+ALTER TABLE app_users
+ADD COLUMN IF NOT EXISTS has_arcane_shield BOOLEAN DEFAULT false,
+ADD COLUMN IF NOT EXISTS has_group_heal BOOLEAN DEFAULT false;
 
 -- Update the create_user_account function to include class and skills
 CREATE OR REPLACE FUNCTION create_user_account(

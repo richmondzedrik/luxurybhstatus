@@ -22,7 +22,8 @@ const Login = () => {
     { value: 'Sword', label: '⚔️ Sword', description: 'Melee warrior with high defense' },
     { value: 'Assassin', label: '🗡️ Assassin', description: 'Fast attacker with stealth' },
     { value: 'Mage', label: '🪄 Mage', description: 'Ranged magic damage dealer' },
-    { value: 'Dual Blade', label: '🗡️⚔️ Dual Blade', description: 'Dual-wielding fighter' }
+    { value: 'Dual Blade', label: '🗡️⚔️ Dual Blade', description: 'Dual-wielding fighter' },
+    { value: 'Archer', label: '🏹 Archer', description: 'Ranged physical damage dealer' }
   ]
 
   // Redirect if already logged in
