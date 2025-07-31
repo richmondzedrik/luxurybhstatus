@@ -18,24 +18,44 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Check for stored user session
-    const checkStoredSession = () => {
+    // Check for stored user session and validate against database
+    const checkStoredSession = async () => {
       const storedUser = localStorage.getItem('currentUser')
       if (storedUser) {
         try {
           const userData = JSON.parse(storedUser)
-          setUser(userData)
-          // Restore full user profile including admin status and other properties
-          const restoredProfile = {
-            username: userData.username,
-            class: userData.class,
-            has_arcane_shield: userData.has_arcane_shield,
-            has_group_heal: userData.has_group_heal,
-            is_admin: userData.is_admin
+
+          // Validate that the user still exists in the database
+          const { data: dbUser, error } = await supabase
+            .from('app_users')
+            .select('id, username, class, has_arcane_shield, has_group_heal, is_admin')
+            .eq('id', userData.id)
+            .single()
+
+          if (error || !dbUser) {
+            // User no longer exists in database, clear localStorage
+            console.log('User no longer exists in database, clearing session')
+            localStorage.removeItem('currentUser')
+            setUser(null)
+            setUserProfile(null)
+          } else {
+            // User exists, restore session with fresh data from database
+            const fullUser = { ...userData, ...dbUser }
+            localStorage.setItem('currentUser', JSON.stringify(fullUser))
+            setUser(fullUser)
+            setUserProfile({
+              username: dbUser.username,
+              class: dbUser.class,
+              has_arcane_shield: dbUser.has_arcane_shield,
+              has_group_heal: dbUser.has_group_heal,
+              is_admin: dbUser.is_admin
+            })
           }
-          setUserProfile(restoredProfile)
         } catch (error) {
+          console.error('Error validating stored session:', error)
           localStorage.removeItem('currentUser')
+          setUser(null)
+          setUserProfile(null)
         }
       }
       setLoading(false)

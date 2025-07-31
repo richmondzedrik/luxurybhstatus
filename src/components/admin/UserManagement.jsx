@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../contexts/AuthContext'
 import LoadingSpinner from '../LoadingSpinner'
 
 const UserManagement = () => {
+  const { user: currentUser, signOut } = useAuth()
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -11,18 +13,24 @@ const UserManagement = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true)
+      console.log('🔄 Fetching users from database...')
       const { data, error } = await supabase
         .from('app_users')
         .select('*')
         .order('created_at', { ascending: false })
 
+      console.log('Fetch users result:', { data, error, count: data?.length })
+
       if (error) {
+        console.error('Fetch users error:', error)
         setError('Failed to fetch users: ' + error.message)
       } else {
+        console.log(`✅ Fetched ${data?.length || 0} users`)
         setUsers(data || [])
         setError(null)
       }
     } catch (err) {
+      console.error('Fetch users exception:', err)
       setError('Error fetching users: ' + err.message)
     } finally {
       setLoading(false)
@@ -54,21 +62,115 @@ const UserManagement = () => {
   }
 
   const deleteUser = async (userId, username) => {
-    if (!confirm(`Are you sure you want to delete user "${username}"? This action cannot be undone.`)) {
+    // Check if admin is trying to delete themselves
+    const isDeletingSelf = currentUser?.id === userId
+
+    let confirmMessage = `Are you sure you want to delete user "${username}"? This action cannot be undone.`
+    if (isDeletingSelf) {
+      confirmMessage = `⚠️ WARNING: You are about to delete your own account "${username}"! You will be logged out immediately and lose admin access. This action cannot be undone. Are you absolutely sure?`
+    }
+
+    if (!confirm(confirmMessage)) {
       return
     }
 
     try {
       setLoading(true)
-      const { error } = await supabase
+
+      // Delete user from database
+      console.log(`🗑️ Attempting to delete user: ${username} (ID: ${userId})`)
+      const { error, data } = await supabase
         .from('app_users')
         .delete()
         .eq('id', userId)
+        .select() // This will return the deleted rows
+
+      console.log('Delete result:', { error, data })
 
       if (error) {
-        setError('Failed to delete user: ' + error.message)
+        console.error('Delete error:', error)
+        let errorMessage = error.message
+
+        // Check for RLS policy error
+        if (error.message.includes('policy') || error.message.includes('permission') || error.code === '42501') {
+          errorMessage = `❌ Database Permission Error: Missing DELETE policy for app_users table.
+
+Please run the following SQL in your Supabase SQL Editor:
+
+CREATE POLICY "Allow user deletion" ON app_users FOR DELETE USING (true);
+
+Then try deleting the user again.`
+        }
+
+        setError('Failed to delete user: ' + errorMessage)
+        alert('❌ Delete Failed!\n\n' + errorMessage)
+      } else if (!data || data.length === 0) {
+        console.warn('No user was deleted - user may not exist')
+        setError('User not found or already deleted')
+        alert('⚠️ User not found or already deleted')
       } else {
+        console.log(`✅ Successfully deleted user: ${username}`)
+        console.log('Deleted user data:', data[0])
+        // Clear any localStorage data related to the deleted user
+        const storedUser = localStorage.getItem('currentUser')
+        if (storedUser) {
+          try {
+            const userData = JSON.parse(storedUser)
+            if (userData.id === userId) {
+              // Current user was deleted, clear session and redirect to login
+              localStorage.removeItem('currentUser')
+              alert('Your account has been deleted. You will be logged out.')
+              await signOut()
+              window.location.href = '/'
+              return
+            }
+          } catch (e) {
+            // Ignore parsing errors
+          }
+        }
+
+        // Clear any participation data for the deleted user
+        try {
+          const participationData = JSON.parse(localStorage.getItem('boss_participation') || '{}')
+          let hasChanges = false
+
+          // Remove the deleted user from all boss participation data
+          Object.keys(participationData).forEach(bossId => {
+            if (participationData[bossId] && participationData[bossId][username]) {
+              delete participationData[bossId][username]
+              hasChanges = true
+            }
+          })
+
+          if (hasChanges) {
+            localStorage.setItem('boss_participation', JSON.stringify(participationData))
+          }
+        } catch (e) {
+          // Ignore errors in cleaning participation data
+        }
+
+        // Clear any temporary admin status for the deleted user
+        try {
+          const tempAdminUsers = JSON.parse(localStorage.getItem('tempAdminUsers') || '[]')
+          const updatedTempAdmins = tempAdminUsers.filter(adminUsername => adminUsername !== username)
+          if (updatedTempAdmins.length !== tempAdminUsers.length) {
+            localStorage.setItem('tempAdminUsers', JSON.stringify(updatedTempAdmins))
+          }
+        } catch (e) {
+          // Ignore errors in cleaning temp admin data
+        }
+
+        // Force refresh the user list
+        console.log('🔄 Refreshing user list after deletion...')
         await fetchUsers()
+
+        // Double-check that user is actually gone
+        setTimeout(async () => {
+          console.log('🔍 Double-checking user deletion...')
+          await fetchUsers()
+        }, 1000)
+
+        alert(`User "${username}" has been successfully deleted.`)
       }
     } catch (err) {
       setError('Error deleting user: ' + err.message)
@@ -96,13 +198,26 @@ const UserManagement = () => {
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">User Management</h2>
           <p className="text-gray-600 dark:text-gray-400">Manage user accounts and permissions</p>
         </div>
-        <button
-          onClick={fetchUsers}
-          disabled={loading}
-          className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-        >
-          {loading ? <LoadingSpinner size="xs" /> : '🔄 Refresh'}
-        </button>
+        <div className="flex space-x-2">
+          <button
+            onClick={fetchUsers}
+            disabled={loading}
+            className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+          >
+            {loading ? <LoadingSpinner size="xs" /> : '🔄 Refresh'}
+          </button>
+          <button
+            onClick={() => {
+              console.log('🔄 Force refresh triggered by user')
+              setUsers([]) // Clear current list
+              fetchUsers()
+            }}
+            disabled={loading}
+            className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+          >
+            🔄 Force Refresh
+          </button>
+        </div>
       </div>
 
       {error && (
