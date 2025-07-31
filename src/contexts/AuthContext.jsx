@@ -34,7 +34,7 @@ export const AuthProvider = ({ children }) => {
             is_admin: userData.is_admin
           }
           setUserProfile(restoredProfile)
-        } catch (error)
+        } catch (error) {
           localStorage.removeItem('currentUser')
         }
       }
