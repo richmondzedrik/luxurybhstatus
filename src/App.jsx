@@ -4,6 +4,7 @@ import { AuthProvider } from './contexts/AuthContext'
 import { ThemeProvider } from './contexts/ThemeContext'
 import Login from './components/Login'
 import Dashboard from './components/Dashboard'
+import BossPage from './components/BossPage'
 import ProtectedRoute from './components/ProtectedRoute'
 import ErrorBoundary from './components/ErrorBoundary'
 
@@ -21,6 +22,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <Dashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/bosses"
+                  element={
+                    <ProtectedRoute>
+                      <BossPage />
                     </ProtectedRoute>
                   }
                 />

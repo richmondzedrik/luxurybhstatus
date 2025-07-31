@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useUserStatus } from '../hooks/useUserStatus'
 import UserList from './UserList'
 import LoadingSpinner from './LoadingSpinner'
-import ThemeToggle from './ThemeToggle'
+import Navigation from './Navigation'
 
 const Dashboard = () => {
   const { signOut, userProfile } = useAuth()
@@ -59,16 +59,7 @@ const Dashboard = () => {
                 )}
               </div>
             </div>
-            <div className="flex items-center space-x-3">
-              <ThemeToggle />
-              <button
-                onClick={signOut}
-                className="bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-md hover:shadow-lg"
-              >
-                <span className="hidden sm:inline">Sign Out</span>
-                <span className="sm:hidden">🚪</span>
-              </button>
-            </div>
+            <Navigation onSignOut={signOut} userProfile={userProfile} />
           </div>
         </div>
       </header>
