@@ -25,6 +25,8 @@ const BossPage = () => {
   // Use boss update checker to automatically restore hidden bosses when times change
   const { getHiddenBosses, clearAllHiddenBosses } = useBossUpdateChecker(pendingBosses, refreshBosses)
 
+
+
   // Listen for participation changes to trigger re-renders
   useEffect(() => {
     const handleParticipationChange = () => {
@@ -303,18 +305,7 @@ const BossPage = () => {
             </div>
           )}
 
-          {/* Debug Section - Temporary */}
-          {userProfile?.is_admin && (
-            <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-600 rounded-lg">
-              <h4 className="text-sm font-semibold text-blue-800 dark:text-blue-400 mb-2">🔧 Admin Debug Info</h4>
-              <div className="text-xs text-blue-700 dark:text-blue-500 space-y-1">
-                <div>Admin Status: {userProfile?.is_admin ? '✅ Yes' : '❌ No'}</div>
-                <div>Username: {userProfile?.username || 'Unknown'}</div>
-                <div>Overdue Bosses: {pendingBosses.filter(boss => isBossOverdue(boss)).map(b => b.monster).join(', ') || 'None'}</div>
-                <div>Total Bosses: {pendingBosses.length}</div>
-              </div>
-            </div>
-          )}
+
 
           {/* Hidden Bosses Admin Section - Admin Only */}
           {userProfile?.is_admin && (() => {
@@ -437,36 +428,7 @@ const BossPage = () => {
                     </div>
                   </div>
 
-                  {/* Test Admin Detection - Shows for ALL available bosses if admin */}
-                  {userProfile?.is_admin && (() => {
-                    const respawnDate = calculateRespawnTime(boss)
-                    const now = new Date()
-                    const diffInMs = respawnDate?.getTime() - now.getTime()
-                    const isAvailable = diffInMs <= 0
 
-                    return isAvailable && (
-                      <div className="mt-4 pt-4 border-t border-purple-200 dark:border-purple-600">
-                        <div className="bg-purple-50 dark:bg-purple-900/30 rounded-lg p-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h4 className="text-sm font-medium text-purple-800 dark:text-purple-400">
-                                👑 Admin Test: Available Boss
-                              </h4>
-                              <p className="text-xs text-purple-700 dark:text-purple-500 mt-1">
-                                <strong>Admin Only:</strong> This boss is available. Available for {Math.floor(Math.abs(diffInMs) / (1000 * 60))} minutes.
-                              </p>
-                            </div>
-                            <button
-                              onClick={() => handleDidNotUpdate(boss)}
-                              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                            >
-                              📝 Did Not Update
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })()}
 
                   {/* Did Not Update Button for Overdue Bosses - Admin Only */}
                   {userProfile?.is_admin && isBossOverdue(boss) && (

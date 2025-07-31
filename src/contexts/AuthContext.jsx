@@ -25,8 +25,16 @@ export const AuthProvider = ({ children }) => {
         try {
           const userData = JSON.parse(storedUser)
           setUser(userData)
-          setUserProfile({ username: userData.username })
-        } catch (error) {
+          // Restore full user profile including admin status and other properties
+          const restoredProfile = {
+            username: userData.username,
+            class: userData.class,
+            has_arcane_shield: userData.has_arcane_shield,
+            has_group_heal: userData.has_group_heal,
+            is_admin: userData.is_admin
+          }
+          setUserProfile(restoredProfile)
+        } catch (error)
           localStorage.removeItem('currentUser')
         }
       }

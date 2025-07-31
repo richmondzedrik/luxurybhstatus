@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext'
 const PARTICIPATION_STORAGE_KEY = 'boss_participation'
 
 export const useBossParticipation = () => {
-  const { userProfile } = useAuth()
+  const { userProfile, loading: authLoading } = useAuth()
   const [participationData, setParticipationData] = useState({})
   const [loading, setLoading] = useState(false)
   const [updateTrigger, setUpdateTrigger] = useState(0)
@@ -22,6 +22,14 @@ export const useBossParticipation = () => {
       console.error('Error loading participation data:', error)
     }
   }, [])
+
+  // Force re-render when auth loading completes to ensure userProfile is available
+  useEffect(() => {
+    if (!authLoading && userProfile) {
+      // Trigger a re-render to ensure all components get the updated userProfile
+      setUpdateTrigger(prev => prev + 1)
+    }
+  }, [authLoading, userProfile])
 
   // Listen for participation changes from other components
   useEffect(() => {
