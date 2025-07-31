@@ -5,8 +5,11 @@ import { ThemeProvider } from './contexts/ThemeContext'
 import Login from './components/Login'
 import Dashboard from './components/Dashboard'
 import BossPage from './components/BossPage'
+import AdminPage from './components/AdminPage'
 import ProtectedRoute from './components/ProtectedRoute'
+import AdminRoute from './components/AdminRoute'
 import ErrorBoundary from './components/ErrorBoundary'
+import './utils/adminSetup' // Load admin utilities for development
 
 function App() {
   return (
@@ -31,6 +34,14 @@ function App() {
                     <ProtectedRoute>
                       <BossPage />
                     </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin"
+                  element={
+                    <AdminRoute>
+                      <AdminPage />
+                    </AdminRoute>
                   }
                 />
               </Routes>

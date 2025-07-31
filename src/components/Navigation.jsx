@@ -9,6 +9,8 @@ const Navigation = ({ onSignOut, userProfile }) => {
 
   const isActive = (path) => location.pathname === path
 
+
+
   const navItems = [
     {
       path: '/',
@@ -24,7 +26,15 @@ const Navigation = ({ onSignOut, userProfile }) => {
       badge: bossCount > 0 ? bossCount : null,
       badgeColor: bossCount > 0 ? 'bg-red-500 text-white' : null,
       pulse: bossCount > 0
-    }
+    },
+    ...(userProfile?.is_admin ? [{
+      path: '/admin',
+      label: 'Admin',
+      icon: '⚡',
+      description: 'Admin Panel',
+      badge: null,
+      badgeColor: 'bg-purple-500 text-white'
+    }] : [])
   ]
 
   return (

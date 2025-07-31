@@ -16,7 +16,7 @@ const Login = () => {
   const [isSignUp, setIsSignUp] = useState(false)
   const [checkingUsername, setCheckingUsername] = useState(false)
   const [usernameAvailable, setUsernameAvailable] = useState(null)
-  const { user, signIn, signUp, checkUsernameAvailable } = useAuth()
+  const { user, userProfile, signIn, signUp, checkUsernameAvailable } = useAuth()
 
   const classes = [
     { value: 'Orb', label: 'Orb', description: 'Support class with healing abilities', icon: '/icons/orb.png' },
@@ -29,7 +29,8 @@ const Login = () => {
 
   // Redirect if already logged in
   if (user) {
-    return <Navigate to="/" />
+    // Redirect admin users to admin panel, regular users to dashboard
+    return <Navigate to={userProfile?.is_admin ? "/admin" : "/"} />
   }
 
   // Check username availability when typing (for sign up)

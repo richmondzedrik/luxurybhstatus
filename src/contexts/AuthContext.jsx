@@ -44,21 +44,39 @@ export const AuthProvider = ({ children }) => {
       try {
         const { data: profileData } = await supabase
           .from('app_users')
-          .select('username, class, has_arcane_shield, has_group_heal')
+          .select('username, class, has_arcane_shield, has_group_heal, is_admin')
           .eq('id', data.user.id)
           .single()
 
-        const fullUser = { ...data.user, ...profileData }
+        // Check for temporary admin status (fallback for development)
+        const tempAdminUsers = JSON.parse(localStorage.getItem('tempAdminUsers') || '[]')
+        const isTempAdmin = tempAdminUsers.includes(profileData?.username || data.user.username)
+
+        const finalProfileData = {
+          ...profileData,
+          is_admin: profileData?.is_admin || isTempAdmin
+        }
+
+        const fullUser = { ...data.user, ...finalProfileData }
 
         // Store user session
         localStorage.setItem('currentUser', JSON.stringify(fullUser))
         setUser(fullUser)
-        setUserProfile(profileData || { username: data.user.username })
+        setUserProfile(finalProfileData || { username: data.user.username })
       } catch (profileError) {
-        // Fallback if profile fetch fails
-        localStorage.setItem('currentUser', JSON.stringify(data.user))
-        setUser(data.user)
-        setUserProfile({ username: data.user.username })
+        // Fallback if profile fetch fails - check for temporary admin status
+        const tempAdminUsers = JSON.parse(localStorage.getItem('tempAdminUsers') || '[]')
+        const isTempAdmin = tempAdminUsers.includes(data.user.username)
+
+        const fallbackProfile = {
+          username: data.user.username,
+          is_admin: isTempAdmin
+        }
+
+        const fullUser = { ...data.user, ...fallbackProfile }
+        localStorage.setItem('currentUser', JSON.stringify(fullUser))
+        setUser(fullUser)
+        setUserProfile(fallbackProfile)
       }
     }
 
