@@ -4,6 +4,7 @@ import Navigation from './Navigation'
 import BossManagement from './admin/BossManagement'
 import UserManagement from './admin/UserManagement'
 import SystemSettings from './admin/SystemSettings'
+import DiscordBotConfig from './admin/DiscordBotConfig'
 
 const AdminPage = () => {
   const { userProfile, signOut } = useAuth()
@@ -14,6 +15,7 @@ const AdminPage = () => {
   const tabs = [
     { id: 'bosses', name: 'Boss Management', icon: '👹', component: BossManagement },
     { id: 'users', name: 'User Management', icon: '👥', component: UserManagement },
+    { id: 'discord', name: 'Discord Bot', icon: '🤖', component: DiscordBotConfig },
     { id: 'settings', name: 'System Settings', icon: '⚙️', component: SystemSettings }
   ]
 

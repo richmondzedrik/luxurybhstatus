@@ -7,6 +7,7 @@ import Dashboard from './components/Dashboard'
 import BossPage from './components/BossPage'
 import AdminPage from './components/AdminPage'
 import ProtectedRoute from './components/ProtectedRoute'
+import VerifiedRoute from './components/VerifiedRoute'
 import AdminRoute from './components/AdminRoute'
 import ErrorBoundary from './components/ErrorBoundary'
 import './utils/adminSetup' // Load admin utilities for development
@@ -23,17 +24,17 @@ function App() {
                 <Route
                   path="/"
                   element={
-                    <ProtectedRoute>
+                    <VerifiedRoute>
                       <Dashboard />
-                    </ProtectedRoute>
+                    </VerifiedRoute>
                   }
                 />
                 <Route
                   path="/bosses"
                   element={
-                    <ProtectedRoute>
+                    <VerifiedRoute>
                       <BossPage />
-                    </ProtectedRoute>
+                    </VerifiedRoute>
                   }
                 />
                 <Route

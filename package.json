@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "discord-bot": "node discord-bot-server.js",
+    "dev-with-bot": "concurrently \"npm run dev\" \"npm run discord-bot\""
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.7.0",
@@ -17,6 +19,11 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.53.0",
+    "concurrently": "^9.2.0",
+    "cors": "^2.8.5",
+    "discord.js": "^14.21.0",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.7.1"

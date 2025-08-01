@@ -16,6 +16,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [userProfile, setUserProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [verificationLoading, setVerificationLoading] = useState(false)
 
   useEffect(() => {
     // Check for stored user session and validate against database
@@ -23,12 +24,13 @@ export const AuthProvider = ({ children }) => {
       const storedUser = localStorage.getItem('currentUser')
       if (storedUser) {
         try {
+          setVerificationLoading(true)
           const userData = JSON.parse(storedUser)
 
           // Validate that the user still exists in the database
           const { data: dbUser, error } = await supabase
             .from('app_users')
-            .select('id, username, class, has_arcane_shield, has_group_heal, is_admin')
+            .select('id, username, class, has_arcane_shield, has_group_heal, is_admin, is_verified, verified_at')
             .eq('id', userData.id)
             .single()
 
@@ -48,7 +50,9 @@ export const AuthProvider = ({ children }) => {
               class: dbUser.class,
               has_arcane_shield: dbUser.has_arcane_shield,
               has_group_heal: dbUser.has_group_heal,
-              is_admin: dbUser.is_admin
+              is_admin: dbUser.is_admin,
+              is_verified: dbUser.is_verified !== undefined ? dbUser.is_verified : false,
+              verified_at: dbUser.verified_at
             })
           }
         } catch (error) {
@@ -56,6 +60,8 @@ export const AuthProvider = ({ children }) => {
           localStorage.removeItem('currentUser')
           setUser(null)
           setUserProfile(null)
+        } finally {
+          setVerificationLoading(false)
         }
       }
       setLoading(false)
@@ -72,7 +78,7 @@ export const AuthProvider = ({ children }) => {
       try {
         const { data: profileData } = await supabase
           .from('app_users')
-          .select('username, class, has_arcane_shield, has_group_heal, is_admin')
+          .select('username, class, has_arcane_shield, has_group_heal, is_admin, is_verified, verified_at')
           .eq('id', data.user.id)
           .single()
 
@@ -82,7 +88,9 @@ export const AuthProvider = ({ children }) => {
 
         const finalProfileData = {
           ...profileData,
-          is_admin: profileData?.is_admin || isTempAdmin
+          is_admin: profileData?.is_admin || isTempAdmin,
+          is_verified: profileData?.is_verified !== undefined ? profileData.is_verified : false,
+          verified_at: profileData?.verified_at
         }
 
         const fullUser = { ...data.user, ...finalProfileData }
@@ -98,7 +106,9 @@ export const AuthProvider = ({ children }) => {
 
         const fallbackProfile = {
           username: data.user.username,
-          is_admin: isTempAdmin
+          is_admin: isTempAdmin,
+          is_verified: false, // Default to unverified if profile fetch fails
+          verified_at: null
         }
 
         const fullUser = { ...data.user, ...fallbackProfile }
@@ -122,7 +132,9 @@ export const AuthProvider = ({ children }) => {
         username: data.user.username,
         class: data.user.class,
         has_arcane_shield: data.user.has_arcane_shield,
-        has_group_heal: data.user.has_group_heal
+        has_group_heal: data.user.has_group_heal,
+        is_verified: data.user.is_verified || false,
+        verified_at: data.user.verified_at || null
       })
     }
 
@@ -140,6 +152,7 @@ export const AuthProvider = ({ children }) => {
     user,
     userProfile,
     loading,
+    verificationLoading,
     signIn,
     signUp,
     signOut,

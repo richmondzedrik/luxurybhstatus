@@ -16,7 +16,7 @@ const UserManagement = () => {
       console.log('🔄 Fetching users from database...')
       const { data, error } = await supabase
         .from('app_users')
-        .select('*')
+        .select('id, username, class, has_arcane_shield, has_group_heal, is_admin, is_verified, verified_at, created_at')
         .order('created_at', { ascending: false })
 
       console.log('Fetch users result:', { data, error, count: data?.length })
@@ -56,6 +56,72 @@ const UserManagement = () => {
       }
     } catch (err) {
       setError('Error updating admin status: ' + err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const verifyUser = async (userId, username) => {
+    try {
+      setLoading(true)
+      console.log(`✅ Verifying user: ${username} (ID: ${userId})`)
+
+      const { data, error } = await supabase.rpc('verify_user', {
+        user_id_param: userId
+      })
+
+      if (error) {
+        console.error('Verify error:', error)
+        setError('Failed to verify user: ' + error.message)
+        alert('❌ Verification Failed!\n\n' + error.message)
+      } else if (!data.success) {
+        console.warn('Verification failed:', data.error)
+        setError('Failed to verify user: ' + data.error)
+        alert('❌ Verification Failed!\n\n' + data.error)
+      } else {
+        console.log(`✅ Successfully verified user: ${username}`)
+        await fetchUsers()
+        alert(`✅ User "${username}" has been verified successfully!`)
+      }
+    } catch (err) {
+      console.error('Verify user exception:', err)
+      setError('Error verifying user: ' + err.message)
+      alert('❌ Verification Error!\n\n' + err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const unverifyUser = async (userId, username) => {
+    if (!confirm(`Are you sure you want to remove verification from user "${username}"? They will need to be verified again to access the system.`)) {
+      return
+    }
+
+    try {
+      setLoading(true)
+      console.log(`❌ Removing verification from user: ${username} (ID: ${userId})`)
+
+      const { data, error } = await supabase.rpc('unverify_user', {
+        user_id_param: userId
+      })
+
+      if (error) {
+        console.error('Unverify error:', error)
+        setError('Failed to remove verification: ' + error.message)
+        alert('❌ Unverification Failed!\n\n' + error.message)
+      } else if (!data.success) {
+        console.warn('Unverification failed:', data.error)
+        setError('Failed to remove verification: ' + data.error)
+        alert('❌ Unverification Failed!\n\n' + data.error)
+      } else {
+        console.log(`❌ Successfully removed verification from user: ${username}`)
+        await fetchUsers()
+        alert(`❌ Verification removed from user "${username}".`)
+      }
+    } catch (err) {
+      console.error('Unverify user exception:', err)
+      setError('Error removing verification: ' + err.message)
+      alert('❌ Unverification Error!\n\n' + err.message)
     } finally {
       setLoading(false)
     }
@@ -245,15 +311,15 @@ Then try deleting the user again.`
               </p>
             </div>
             <div className="bg-green-50 dark:bg-green-900/30 p-4 rounded-lg border border-green-200 dark:border-green-600">
-              <h3 className="text-lg font-semibold text-green-700 dark:text-green-400">Active Users</h3>
+              <h3 className="text-lg font-semibold text-green-700 dark:text-green-400">Verified Users</h3>
               <p className="text-2xl font-bold text-green-900 dark:text-green-300">
-                {users.filter(user => !user.is_admin).length}
+                {users.filter(user => user.is_verified).length}
               </p>
             </div>
             <div className="bg-orange-50 dark:bg-orange-900/30 p-4 rounded-lg border border-orange-200 dark:border-orange-600">
-              <h3 className="text-lg font-semibold text-orange-700 dark:text-orange-400">Classes</h3>
+              <h3 className="text-lg font-semibold text-orange-700 dark:text-orange-400">Pending Verification</h3>
               <p className="text-2xl font-bold text-orange-900 dark:text-orange-300">
-                {new Set(users.map(user => user.class)).size}
+                {users.filter(user => !user.is_verified).length}
               </p>
             </div>
           </div>
@@ -266,6 +332,7 @@ Then try deleting the user again.`
                   <th className="border border-gray-200 dark:border-gray-600 px-4 py-2 text-left text-gray-900 dark:text-white">User</th>
                   <th className="border border-gray-200 dark:border-gray-600 px-4 py-2 text-left text-gray-900 dark:text-white">Class</th>
                   <th className="border border-gray-200 dark:border-gray-600 px-4 py-2 text-left text-gray-900 dark:text-white">Skills</th>
+                  <th className="border border-gray-200 dark:border-gray-600 px-4 py-2 text-left text-gray-900 dark:text-white">Status</th>
                   <th className="border border-gray-200 dark:border-gray-600 px-4 py-2 text-left text-gray-900 dark:text-white">Role</th>
                   <th className="border border-gray-200 dark:border-gray-600 px-4 py-2 text-left text-gray-900 dark:text-white">Created</th>
                   <th className="border border-gray-200 dark:border-gray-600 px-4 py-2 text-left text-gray-900 dark:text-white">Actions</th>
@@ -304,7 +371,21 @@ Then try deleting the user again.`
                     </td>
                     <td className="border border-gray-200 dark:border-gray-600 px-4 py-2 text-gray-900 dark:text-white">
                       <span className={`px-2 py-1 rounded text-xs font-medium ${
-                        user.is_admin 
+                        user.is_verified
+                          ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                          : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                      }`}>
+                        {user.is_verified ? '✅ Verified' : '⏳ Pending'}
+                      </span>
+                      {user.verified_at && (
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          {new Date(user.verified_at).toLocaleDateString()}
+                        </div>
+                      )}
+                    </td>
+                    <td className="border border-gray-200 dark:border-gray-600 px-4 py-2 text-gray-900 dark:text-white">
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
+                        user.is_admin
                           ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400'
                           : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
                       }`}>
@@ -315,24 +396,50 @@ Then try deleting the user again.`
                       {user.created_at ? new Date(user.created_at).toLocaleDateString() : '-'}
                     </td>
                     <td className="border border-gray-200 dark:border-gray-600 px-4 py-2">
-                      <div className="flex space-x-2">
+                      <div className="flex flex-wrap gap-2">
+                        {/* Verification Actions */}
+                        {user.is_verified ? (
+                          <button
+                            onClick={() => unverifyUser(user.id, user.username)}
+                            disabled={loading}
+                            className="bg-orange-600 hover:bg-orange-700 text-white px-3 py-1 rounded text-sm transition-colors"
+                            title="Remove verification"
+                          >
+                            ❌ Unverify
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => verifyUser(user.id, user.username)}
+                            disabled={loading}
+                            className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm transition-colors"
+                            title="Verify user"
+                          >
+                            ✅ Verify
+                          </button>
+                        )}
+
+                        {/* Admin Actions */}
                         <button
                           onClick={() => toggleAdminStatus(user.id, user.is_admin)}
                           disabled={loading}
                           className={`px-3 py-1 rounded text-sm transition-colors ${
                             user.is_admin
-                              ? 'bg-orange-600 hover:bg-orange-700 text-white'
-                              : 'bg-purple-600 hover:bg-purple-700 text-white'
+                              ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                              : 'bg-blue-600 hover:bg-blue-700 text-white'
                           }`}
+                          title={user.is_admin ? 'Remove admin status' : 'Make admin'}
                         >
-                          {user.is_admin ? 'Remove Admin' : 'Make Admin'}
+                          {user.is_admin ? '👤 Remove Admin' : '👑 Make Admin'}
                         </button>
+
+                        {/* Delete Action */}
                         <button
                           onClick={() => deleteUser(user.id, user.username)}
                           disabled={loading}
                           className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors"
+                          title="Delete user"
                         >
-                          Delete
+                          🗑️ Delete
                         </button>
                       </div>
                     </td>
